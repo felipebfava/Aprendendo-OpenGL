@@ -1,9 +1,9 @@
-# Circulo 2d simples com OpenGL e glfw
+# Circulo 3d simples com OpenGL e glfw
 
 from OpenGL.GL import *
 import glfw
 import math
-
+from OpenGL.GLU import *
 
 # Variáveis Globais para movimentar o círculo começando da origem (0,0)
 # Movimento de transladar
@@ -12,20 +12,47 @@ transla_y = 0
 
 
 def init():
+
+    # Iniciar o GLFW
+    glfw.init()
+
+    # Criar a Janela
+    window = glfw.create_window(800, 600, "Janela Círculo 3D", None, None)
+
+    # Define como janela principal no contexto
+    glfw.make_context_current(window)
+    
     # Seta uma cor de fundo a janela alterando r,g,b,alpha(opacidade)
     glClearColor(1, 1, 1, 1)
 
+    glViewport(0, 0, 800, 600)
 
-def desenhaCirculo2d(raio, segmentos):
+    # Configuração do pipeline gráfico
+    glMatrixMode(GL_PROJECTION) #seleciona matriz projeção
+    glLoadIdentity() # carrega e seta uma matriz identidade
 
-    # # Aplicar uma matriz identidade para não acumular as transformações
-    # # sem ela o quadrado só para de movimentar caso receba
-    # # uma tecla contrária ao movimento que está fazendo
-    glLoadIdentity()
+    # define a perspectiva de projeção
+    # configura campo de visão e proporção, ponto mais próximo e ponto mais distante
+    # usando a biblioteca GLU
+    gluPerspective(
+        45, # ângulo do campo de visão da perspectiva
+        800 / 600, # tamanhos / proporções da tela mesmas usadas na janela
+        0.1, # seta uma perspectiva mínima de renderização
+        100.0 # seta uma perspectivaplano máxima de renderização
+    )
 
-    # # Para aplicar movimento na estrutura
-    # # Precisa ser antes de definir a estrutura em glBegin()
-    glTranslatef(transla_x, transla_y, 0)
+    # volta para a matriz de modelo
+    glMatrixMode(GL_MODELVIEW)
+
+
+    # Habilita profundidade para estruturas em 3d
+    glEnable(GL_DEPTH_TEST)
+
+    # retorna toda a estrutura da janela
+    return window
+
+
+def desenhaCirculo3d(raio, segmentos):
 
     # Função que inicia qualquer estrutura aceita pelo glfw 
     # Estrutura do circulo usaremos varios triangulos
@@ -34,6 +61,9 @@ def desenhaCirculo2d(raio, segmentos):
     # Para definir uma cor a ser usada pela estrutura
     # Alterando r,g,b indo de 0-(0) a 1-(255)
     glColor3f(1, 0, 0) # vermelho
+
+    # Para desenhar o círculo 3d - Esfera precisamos pegar seu centro
+    glVertex3f(0, 0, 0) # centro
 
     # Loop para repetir a conexão dos triangulos
     # segmentos + 1 para conectar o último triangulo
@@ -63,27 +93,22 @@ def desenhaCirculo2d(raio, segmentos):
         y = raio * math.sin(angulo_radianos)
 
         # Define os vértices do círculo
-        # Alterando a posição em x,y
-        # Como faremos um círculo 2d usaremos glVertex2f()
+        # Alterando a posição em x,y,z
+        # Como faremos um círculo 3d usaremos glVertex3f()
         # ainda dentro do for
-        glVertex2f(x, y)
+        glVertex3f(x, y, 0)
 
     # Determina o Fim da estrutura do Begin
     glEnd()
 
 
 def render():
-    
-    # Limpa o buffer de cor da janela
-    glClear(GL_COLOR_BUFFER_BIT)
 
     # Chama a função de desenhar o círculo 2d
     # No nosso caso precisamos passar o raio do circulo e
     # a quantidade de segmentos que ele terá
     # quanto mais segmentos, mais redondo será o círculo
-    desenhaCirculo2d(0.1, 20)
-
-    
+    desenhaCirculo3d(0.5, 20)
 
 
 # Função que pega as teclas apertadas do teclado
@@ -113,31 +138,42 @@ def teclado(window, key, scancode, action, mods):
 
 
 def main():
-    
-    # Iniciar o GLFW
-    glfw.init()
 
-    # Criar a Janela
-    window = glfw.create_window(800, 600, "Janela Círculo 2D", None, None)
+    # Criar a Janela chamando a função para iniciar
+    window = init()
 
     # Define como janela principal no contexto
     glfw.make_context_current(window)
 
     # Define a função que irá captar as entradas do teclado
     glfw.set_key_callback(window, teclado)
-
-    # Chama a função para iniciar
-    init()
     
     # Loop para deixar a janela aberta até ser fechada
     while not glfw.window_should_close(window):
-        
-        # Carrega os eventos de inputs
-        glfw.poll_events()
+        # Limpa o buffer de cor da janela
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        # # Aplicar uma matriz identidade para não acumular as transformações
+        # # sem ela o quadrado só para de movimentar caso receba
+        # # uma tecla contrária ao movimento que está fazendo
+        glLoadIdentity()
+
+        # # Para aplicar movimento na estrutura
+        # # Precisa ser antes de definir a estrutura em glBegin()
+        glTranslatef(transla_x, transla_y, 0)
+
+        # E ajustar a câmera
+        gluLookAt(
+            0, 0, 2,   # x,y,z - posição da câmera
+            0, 0, 0,   # x,y,z - para onde a câmera olha
+            0, 1, 0    # x,y,z - qual direção é "cima" para a câmera
+        )
 
         # Chama a função de renderização - nossa imagem/objeto
         render()
 
+        # Carrega os eventos de inputs
+        glfw.poll_events()
         # Usa buffers para renderização da imagem da janela
         glfw.swap_buffers(window)
 

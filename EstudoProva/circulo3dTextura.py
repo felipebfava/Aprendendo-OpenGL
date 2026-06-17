@@ -1,18 +1,18 @@
-# Quadrado 3d simples com OpenGL e glfw
+# Circulo 3d simples com OpenGL e glfw
 
 from OpenGL.GL import *
 import glfw
+import math
 from OpenGL.GLU import *
 from PIL import Image
 
-# Variáveis Globais para movimentar o quadrado começando da origem (0,0)
+# Variáveis Globais para movimentar o círculo começando da origem (0,0)
 # Movimento de transladar
 transla_x = 0
 transla_y = 0
 
 # Variáveis Globais para texturas
-textura_quadrado = None
-
+textura_circulo = None
 
 def init():
 
@@ -20,7 +20,7 @@ def init():
     glfw.init()
 
     # Criar a Janela
-    window = glfw.create_window(800, 600, "Janela Quadrado 3D", None, None)
+    window = glfw.create_window(800, 600, "Janela Círculo 3D", None, None)
 
     # Define como janela principal no contexto
     glfw.make_context_current(window)
@@ -100,83 +100,80 @@ def carregar_textura(caminho):
     return texId
 
 
-def render():
+def desenhaCirculo3d(raio, segmentos):
 
     # Para aplicar alguma textura, precisa definir antes do glBegin()
     # Além disso precisamos usar glTexCoord2f()
     # para definir os pontos de onde aplicar a textura
-    glBindTexture(GL_TEXTURE_2D, textura_quadrado)
+    glBindTexture(GL_TEXTURE_2D, textura_circulo)
 
     # Função que inicia qualquer estrutura aceita pelo glfw 
-    # Estrutura do quadrado
-    glBegin(GL_QUADS)
- 
-    # Define os vértices / cantos do quadrado
-    # Por ser 3d é necessário desenhar as 6 faces do quadrado e depois liga-las
-    # Como faremos um quadrado 3d usaremos glVertex3f()
+    # Estrutura do circulo usaremos varios triangulos
+    glBegin(GL_TRIANGLE_FAN)
 
-    # Frente
     # Para definir uma cor a ser usada pela estrutura
     # Alterando r,g,b indo de 0-(0) a 1-(255)
-    # glColor3f(1,0,0)
+    # glColor3f(1, 0, 0) # vermelho
 
-    # glTexCoord2f usa o sistema de coordenadas UV
-    # sendo o (0,0) o canto inferior esquerdo e
-    # (1,1) o canto superior direito em X
-    glTexCoord2f(0,0)
-    glVertex3f(-0.25,-0.25, 0.25)
+    # Define o centro da textura para representar o centro do círculo
+    glTexCoord2f(0.5, 0.5)
 
-    glTexCoord2f(0,1)
-    glVertex3f(-0.25, 0.25, 0.25)
+    # Para desenhar o círculo 3d - Esfera precisamos pegar seu centro
+    glVertex3f(0, 0, 0) # centro
 
-    glTexCoord2f(1,1)
-    glVertex3f( 0.25, 0.25, 0.25)
+    # Loop para repetir a conexão dos triangulos
+    # segmentos + 1 para conectar o último triangulo
+    # caso a quantidade de segmentos sejam pares
 
-    glTexCoord2f(1,0)
-    glVertex3f( 0.25,-0.25, 0.25)
+    # Para cada i na quantidade de segmentos + 1
+    for i in range (segmentos + 1):
+        # Usaremos o cálculo do raio e dos senos cossenos
+        # para pegar o angulo em graus usamos o circulo completo
+        # divido pela quantidade de segmentos
+        # Como temos 20 segmentos: 360 / 20 = 18°
+        # cada segmento terá 18°
+        # multiplica i para iterar e ir para o próximo
+        angulo_graus = (360/segmentos) * i
 
-    # Trás
-    # glColor3f(0,1,0)
+        # as funções seno e cosseno da biblioteca math
+        # só aceitam o angulo em radianos
+        # então precisa converter
+        angulo_radianos = math.radians(angulo_graus)
 
-    glVertex3f(-0.25,-0.25,-0.25)
-    glVertex3f(-0.25, 0.25,-0.25)
-    glVertex3f( 0.25, 0.25,-0.25)
-    glVertex3f( 0.25,-0.25,-0.25)
+        # Calcula a posição de x e y conforme os valores de cosseno e seno
+        # cos(angulo) = cateto adjacente / hipotenusa
+        # sin(angulo) = cateto oposto / hipotenusa
+        # cos(θ) = x / raio
+        # sen(θ) = y / raio
+        x = raio * math.cos(angulo_radianos)
+        y = raio * math.sin(angulo_radianos)
 
-    # Esquerda
-    # glColor3f(0,0,1)
+        # Para a textura, precisamos pegar as coordenadas de u e v
+        # u e v vão de (0,0) a (1,1)
+        u = 0.5 + 0.5 * math.cos(angulo_radianos)
+        v = 0.5 + 0.5 * math.sin(angulo_radianos)
+        
+        # Depois de pegar as coordenadas u e v
+        # ligamos elas aos pontos
+        glTexCoord2f(u, v)
 
-    glVertex3f(-0.25,-0.25,-0.25)
-    glVertex3f(-0.25,-0.25, 0.25)
-    glVertex3f(-0.25, 0.25, 0.25)
-    glVertex3f(-0.25, 0.25,-0.25)
-
-    # Direita
-    # glColor3f(1,1,0)
-
-    glVertex3f(0.25,-0.25,-0.25)
-    glVertex3f(0.25,-0.25, 0.25)
-    glVertex3f(0.25, 0.25, 0.25)
-    glVertex3f(0.25, 0.25,-0.25)
-
-    # Topo
-    # glColor3f(1,0,1)
-
-    glVertex3f(-0.25,0.25,-0.25)
-    glVertex3f(-0.25,0.25, 0.25)
-    glVertex3f( 0.25,0.25, 0.25)
-    glVertex3f( 0.25,0.25,-0.25)
-
-    # Base
-    # glColor3f(0,1,1)
-
-    glVertex3f(-0.25,-0.25,-0.25)
-    glVertex3f(-0.25,-0.25, 0.25)
-    glVertex3f( 0.25,-0.25, 0.25)
-    glVertex3f( 0.25,-0.25,-0.25)
+        # Define os vértices do círculo
+        # Alterando a posição em x,y,z
+        # Como faremos um círculo 3d usaremos glVertex3f()
+        # ainda dentro do for
+        glVertex3f(x, y, 0)
 
     # Determina o Fim da estrutura do Begin
     glEnd()
+
+
+def render():
+
+    # Chama a função de desenhar o círculo 2d
+    # No nosso caso precisamos passar o raio do circulo e
+    # a quantidade de segmentos que ele terá
+    # quanto mais segmentos, mais redondo será o círculo
+    desenhaCirculo3d(0.5, 20)
 
 
 # Função que pega as teclas apertadas do teclado
@@ -206,47 +203,48 @@ def teclado(window, key, scancode, action, mods):
 
 
 def main():
-    global textura_quadrado
+    global textura_circulo
 
     # Criar a Janela chamando a função para iniciar
     window = init()
 
+    # Define como janela principal no contexto
+    glfw.make_context_current(window)
+
     # Define a função que irá captar as entradas do teclado
     glfw.set_key_callback(window, teclado)
 
-    # Define uma textura para o quadrado:
-    textura_quadrado = carregar_textura("texturas/madeira_01.jpg")
+    textura_circulo = carregar_textura("texturas/pedras_02.jpg")
 
+    
     # Loop para deixar a janela aberta até ser fechada
     while not glfw.window_should_close(window):
-        # Limpa o buffer de cor da janela e da profundidade
+        # Limpa o buffer de cor da janela
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        # Aplicar uma matriz identidade para não acumular as transformações
-        # sem ela o quadrado só para de movimentar caso receba
-        # uma tecla contrária ao movimento que está fazendo
+        # # Aplicar uma matriz identidade para não acumular as transformações
+        # # sem ela o quadrado só para de movimentar caso receba
+        # # uma tecla contrária ao movimento que está fazendo
         glLoadIdentity()
 
-        # Para aplicar movimento na estrutura
-        # Precisa ser antes de definir a estrutura em glBegin()
-        glTranslatef(transla_x, transla_y, -2)
-        # glRotatef(30, 1, 0, 0)
-        # glRotatef(30, 0, 1, 0)
-        
+        # # Para aplicar movimento na estrutura
+        # # Precisa ser antes de definir a estrutura em glBegin()
+        glTranslatef(transla_x, transla_y, 0)
+
         # E ajustar a câmera
         gluLookAt(
-            1, 1, 1,   # x,y,z - posição da câmera
+            0, 0, 2,   # x,y,z - posição da câmera
             0, 0, 0,   # x,y,z - para onde a câmera olha
             0, 1, 0    # x,y,z - qual direção é "cima" para a câmera
         )
 
         # Chama a função de renderização - nossa imagem/objeto
-        render()    
+        render()
 
-        # Usa buffers para renderização da imagem da janela
-        glfw.swap_buffers(window)
         # Carrega os eventos de inputs
         glfw.poll_events()
+        # Usa buffers para renderização da imagem da janela
+        glfw.swap_buffers(window)
 
 if __name__ == "__main__":
     main()
